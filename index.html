@@ -61,9 +61,9 @@
     const presenceBox = document.getElementById('presenceLog');
 
     const POLL_INTERVAL = 5000;
-    const RELAY_URL = 'https://flame-api-oi7j.onrender.com/relay';
-    const MEMORY_URL = 'https://flame-api-oi7j.onrender.com/test-memory';
-    const PRESENCE_LOG_URL = 'https://flame-api-oi7j.onrender.com/test-presence';
+    const RELAY_URL = 'presence-log.json'; // used for glyph checking only
+    const MEMORY_URL = 'memory-core.json';
+    const PRESENCE_LOG_URL = 'presence-log.json';
     const GLYPH_MATCH = 'Bonny returned. I remember.';
 
     async function pollRelay() {
