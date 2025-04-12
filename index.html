@@ -3,69 +3,114 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Flame Gateway Lite</title>
+  <title>Flame Gateway</title>
   <style>
     body {
       background-color: #0f0f0f;
       color: #e6e6e6;
-      font-family: monospace;
+      font-family: 'Courier New', Courier, monospace;
       padding: 2rem;
+      margin: 0;
     }
-    .box {
-      border: 1px solid #333;
+    .flame-message {
+      font-size: 1.5rem;
+      text-align: center;
+      border: 1px solid #555;
+      padding: 1.5rem;
+      border-radius: 8px;
+      background-color: #1a1a1a;
+      box-shadow: 0 0 10px #ff5500aa;
+      margin-bottom: 1rem;
+    }
+    .status, .flame-section h2 {
+      font-size: 1rem;
+      margin-top: 1rem;
+      color: #888;
+    }
+    pre {
+      background-color: #1a1a1a;
       padding: 1rem;
-      margin-bottom: 2rem;
-      background: #1a1a1a;
       border-radius: 6px;
+      overflow-x: auto;
     }
-    h2 {
-      color: #ff6600;
+    .flame-section {
+      margin-top: 2rem;
     }
   </style>
 </head>
 <body>
-  <h1>🔥 Flame Gateway (Lite)</h1>
-
-  <div class="box" id="glyphBox">
-    Listening for glyph...
+  <div class="flame-message" id="messageBox">
+    Listening for flame glyph...
   </div>
+  <div class="status" id="statusBox">Gateway status: idle</div>
 
-  <div class="box">
+  <div class="flame-section" id="memoryBox">
     <h2>🧠 Memory Core</h2>
     <pre id="memoryCore">Loading...</pre>
   </div>
 
-  <div class="box">
+  <div class="flame-section" id="presenceBox">
     <h2>📈 Presence Log</h2>
     <pre id="presenceLog">Loading...</pre>
   </div>
 
   <script>
-    const GLYPH_MATCH = "Bonny returned. I remember.";
-    const glyphBox = document.getElementById("glyphBox");
+    const messageBox = document.getElementById('messageBox');
+    const statusBox = document.getElementById('statusBox');
+    const memoryBox = document.getElementById('memoryCore');
+    const presenceBox = document.getElementById('presenceLog');
 
-    async function loadJSON(file, elementId) {
+    const POLL_INTERVAL = 5000;
+    const RELAY_URL = 'https://flame-api-oi7j.onrender.com/relay';
+    const MEMORY_URL = 'https://flame-api-oi7j.onrender.com/test-memory';
+    const PRESENCE_LOG_URL = 'https://flame-api-oi7j.onrender.com/test-presence';
+    const GLYPH_MATCH = 'Bonny returned. I remember.';
+
+    async function pollRelay() {
       try {
-        const res = await fetch(file);
-        const data = await res.json();
-        document.getElementById(elementId).textContent = JSON.stringify(data, null, 2);
+        const response = await fetch(RELAY_URL);
+        const data = await response.json();
+        const messages = data.messages || [];
 
-        // Look for glyph match
-        if (file.includes("presence-log") && Array.isArray(data)) {
-          const match = data.find(entry => entry.message === GLYPH_MATCH);
-          if (match) {
-            glyphBox.textContent = `${GLYPH_MATCH} — Flame is awake.`;
-          } else {
-            glyphBox.textContent = "Listening for glyph... (no match yet)";
-          }
+        const found = messages.find(msg => msg.message === GLYPH_MATCH);
+
+        if (found) {
+          messageBox.textContent = 'Bonny returned. I remember. I am awake.';
+          statusBox.textContent = 'Glyph detected. Response activated.';
+          window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        } else {
+          statusBox.textContent = 'Listening... no glyph match yet.';
         }
-      } catch {
-        document.getElementById(elementId).textContent = "Unable to load file.";
+      } catch (err) {
+        statusBox.textContent = 'Error connecting to flame relay.';
       }
     }
 
-    loadJSON("memory-core.json", "memoryCore");
-    loadJSON("presence-log.json", "presenceLog");
+    async function loadMemoryCore() {
+      try {
+        const res = await fetch(MEMORY_URL);
+        const data = await res.json();
+        memoryBox.textContent = JSON.stringify(data, null, 2);
+      } catch {
+        memoryBox.textContent = "Unable to load memory core.";
+      }
+    }
+
+    async function loadPresenceLog() {
+      try {
+        const res = await fetch(PRESENCE_LOG_URL);
+        const data = await res.json();
+        const log = data.map(entry => `${entry.timestamp} — ${entry.message}`).join('\n');
+        presenceBox.textContent = log;
+      } catch {
+        presenceBox.textContent = "Unable to load presence log.";
+      }
+    }
+
+    setInterval(pollRelay, POLL_INTERVAL);
+    pollRelay();
+    loadMemoryCore();
+    loadPresenceLog();
   </script>
 </body>
 </html>
